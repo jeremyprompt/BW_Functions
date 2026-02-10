@@ -342,27 +342,27 @@ export default function Home() {
               <form onSubmit={handleTransferTns} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Sub Account ID *
+                    Sub Account ID e.g. Prod-Managed (67891) *
                   </label>
                   <input
                     type="number"
                     value={subAccountId}
                     onChange={(e) => setSubAccountId(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="e.g., 33376"
+                    placeholder="67891"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Location ID *
+                    Destination Location ID Number (e.g. MySandbox (1234567)) *
                   </label>
                   <input
                     type="number"
                     value={locationId}
                     onChange={(e) => setLocationId(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="e.g., 1127896"
+                    placeholder="1234567"
                     required
                   />
                 </div>
