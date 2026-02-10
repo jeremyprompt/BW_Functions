@@ -22,7 +22,12 @@ function getBwCreds(): BwCreds {
     );
   }
 
-  return { username, password, accountId };
+  // TypeScript doesn't know these are defined after the check, so we assert they're strings
+  return { 
+    username: username!, 
+    password: password!, 
+    accountId: accountId! 
+  };
 }
 
 function getAuthHeader(creds: BwCreds): string {
