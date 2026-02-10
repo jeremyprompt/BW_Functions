@@ -1,45 +1,411 @@
+'use client';
+
+import { useState } from 'react';
+
+type Tab = 'add' | 'remove' | 'transfer';
+
+interface ApiResponse {
+  status: 'success' | 'error';
+  httpStatus?: number;
+  httpStatusText?: string;
+  rawResponse?: string;
+  message?: string;
+  error?: string;
+}
+
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<Tab>('add');
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<ApiResponse | null>(null);
+
+  // Add Campaign state
+  const [campaignId, setCampaignId] = useState('');
+  const [addPhoneNumbers, setAddPhoneNumbers] = useState('');
+  const [addSms, setAddSms] = useState<'ON' | 'OFF'>('ON');
+
+  // Remove Campaign state
+  const [removePhoneNumbers, setRemovePhoneNumbers] = useState('');
+  const [removeSms, setRemoveSms] = useState<'ON' | 'OFF'>('ON');
+
+  // Transfer TNs state
+  const [subAccountId, setSubAccountId] = useState('');
+  const [locationId, setLocationId] = useState('');
+  const [transferPhoneNumbers, setTransferPhoneNumbers] = useState('');
+
+  const parsePhoneNumbers = (input: string): string[] => {
+    return input
+      .split(/[,\n]/)
+      .map(num => num.trim())
+      .filter(num => num.length > 0);
+  };
+
+  const handleAddCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResponse(null);
+
+    const phoneNumbers = parsePhoneNumbers(addPhoneNumbers);
+    if (!campaignId || phoneNumbers.length === 0) {
+      setResponse({
+        status: 'error',
+        error: 'Campaign ID and at least one phone number are required',
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/bandwidth/add-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId,
+          phoneNumbers,
+          sms: addSms,
+        }),
+      });
+
+      const data = await res.json();
+      setResponse(data);
+    } catch (error) {
+      setResponse({
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResponse(null);
+
+    const phoneNumbers = parsePhoneNumbers(removePhoneNumbers);
+    if (phoneNumbers.length === 0) {
+      setResponse({
+        status: 'error',
+        error: 'At least one phone number is required',
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/bandwidth/remove-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumbers,
+          sms: removeSms,
+        }),
+      });
+
+      const data = await res.json();
+      setResponse(data);
+    } catch (error) {
+      setResponse({
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTransferTns = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResponse(null);
+
+    const phoneNumbers = parsePhoneNumbers(transferPhoneNumbers);
+    const subAccountIdNum = parseInt(subAccountId);
+    const locationIdNum = parseInt(locationId);
+
+    if (!subAccountIdNum || !locationIdNum || phoneNumbers.length === 0) {
+      setResponse({
+        status: 'error',
+        error: 'Sub Account ID, Location ID, and at least one phone number are required',
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/bandwidth/transfer-tns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subAccountId: subAccountIdNum,
+          locationId: locationIdNum,
+          phoneNumbers,
+        }),
+      });
+
+      const data = await res.json();
+      setResponse(data);
+    } catch (error) {
+      setResponse({
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 md:p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-8 text-center">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8 text-gray-900 dark:text-white">
           Bandwidth Functions
         </h1>
-        <p className="text-center mb-8 text-gray-600 dark:text-gray-400">
-          Perform various functions using the Bandwidth API
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-          <a
-            href="/api/bandwidth/status"
-            className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          >
-            <h2 className="mb-3 text-2xl font-semibold">
-              API Status{" "}
-              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                -&gt;
-              </span>
-            </h2>
-            <p className="m-0 max-w-[30ch] text-sm opacity-50">
-              Check Bandwidth API connection status
-            </p>
-          </a>
 
-          <a
-            href="/api/bandwidth/numbers"
-            className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          >
-            <h2 className="mb-3 text-2xl font-semibold">
-              Phone Numbers{" "}
-              <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                -&gt;
-              </span>
-            </h2>
-            <p className="m-0 max-w-[30ch] text-sm opacity-50">
-              View and manage phone numbers
-            </p>
-          </a>
+        {/* Tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <nav className="flex -mb-px">
+              <button
+                onClick={() => {
+                  setActiveTab('add');
+                  setResponse(null);
+                }}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'add'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Add Campaign
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('remove');
+                  setResponse(null);
+                }}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'remove'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Remove Campaign
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('transfer');
+                  setResponse(null);
+                }}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'transfer'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Transfer TNs
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Add Campaign Form */}
+            {activeTab === 'add' && (
+              <form onSubmit={handleAddCampaign} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Campaign ID *
+                  </label>
+                  <input
+                    type="text"
+                    value={campaignId}
+                    onChange={(e) => setCampaignId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="e.g., CVZJ1EL"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Numbers * (one per line or comma-separated)
+                  </label>
+                  <textarea
+                    value={addPhoneNumbers}
+                    onChange={(e) => setAddPhoneNumbers(e.target.value)}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="+12549465498&#10;+13612714600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    SMS Setting
+                  </label>
+                  <select
+                    value={addSms}
+                    onChange={(e) => setAddSms(e.target.value as 'ON' | 'OFF')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="ON">ON</option>
+                    <option value="OFF">OFF</option>
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Processing...' : 'Add Campaign'}
+                </button>
+              </form>
+            )}
+
+            {/* Remove Campaign Form */}
+            {activeTab === 'remove' && (
+              <form onSubmit={handleRemoveCampaign} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Numbers * (one per line or comma-separated)
+                  </label>
+                  <textarea
+                    value={removePhoneNumbers}
+                    onChange={(e) => setRemovePhoneNumbers(e.target.value)}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="+12549465498&#10;+13612714600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    SMS Setting
+                  </label>
+                  <select
+                    value={removeSms}
+                    onChange={(e) => setRemoveSms(e.target.value as 'ON' | 'OFF')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="ON">ON</option>
+                    <option value="OFF">OFF</option>
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Processing...' : 'Remove Campaign'}
+                </button>
+              </form>
+            )}
+
+            {/* Transfer TNs Form */}
+            {activeTab === 'transfer' && (
+              <form onSubmit={handleTransferTns} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Sub Account ID *
+                  </label>
+                  <input
+                    type="number"
+                    value={subAccountId}
+                    onChange={(e) => setSubAccountId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="e.g., 33376"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Location ID *
+                  </label>
+                  <input
+                    type="number"
+                    value={locationId}
+                    onChange={(e) => setLocationId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="e.g., 1127896"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Numbers * (one per line or comma-separated)
+                  </label>
+                  <textarea
+                    value={transferPhoneNumbers}
+                    onChange={(e) => setTransferPhoneNumbers(e.target.value)}
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="+12022401194&#10;+12022351122"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Processing...' : 'Transfer TNs'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
+
+        {/* Response Display */}
+        {response && (
+          <div
+            className={`p-4 rounded-lg ${
+              response.status === 'success'
+                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+            }`}
+          >
+            <h3
+              className={`font-semibold mb-2 ${
+                response.status === 'success'
+                  ? 'text-green-800 dark:text-green-300'
+                  : 'text-red-800 dark:text-red-300'
+              }`}
+            >
+              {response.status === 'success' ? '✓ Success' : '✗ Error'}
+            </h3>
+            {response.message && (
+              <p
+                className={`text-sm mb-2 ${
+                  response.status === 'success'
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-red-700 dark:text-red-400'
+                }`}
+              >
+                {response.message}
+              </p>
+            )}
+            {response.error && (
+              <p className="text-sm text-red-700 dark:text-red-400 mb-2">
+                {response.error}
+              </p>
+            )}
+            {response.httpStatus && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                HTTP Status: {response.httpStatus} {response.httpStatusText}
+              </p>
+            )}
+            {response.rawResponse && (
+              <details className="mt-2">
+                <summary className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Raw Response
+                </summary>
+                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
+                  {response.rawResponse}
+                </pre>
+              </details>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );
