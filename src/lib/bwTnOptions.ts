@@ -39,14 +39,15 @@ export async function addCampaignToTns(params: {
   campaignId: string;
   phoneNumbers: string[];
   sms?: 'ON' | 'OFF';
+  customerOrderId?: string;
 }) {
-  const { campaignId, phoneNumbers, sms = 'ON' } = params;
+  const { campaignId, phoneNumbers, sms = 'ON', customerOrderId } = params;
   const creds = getBwCreds();
 
   const url = `${BANDWIDTH_API_BASE}/accounts/${creds.accountId}/tnOptions`;
 
   const payload = {
-    customerOrderId: 'TnOptionOrder_AddCampaign',
+    customerOrderId: customerOrderId || `TnOptionOrder_AddCampaign_${Date.now()}`,
     tnOptionGroups: [
       {
         sms,
