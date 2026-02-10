@@ -4,6 +4,14 @@ import { useState } from 'react';
 
 type Tab = 'add' | 'remove' | 'transfer';
 
+interface ParsedResponse {
+  orderId?: string;
+  processingStatus?: string;
+  errors: string[];
+  warnings: string[];
+  phoneNumbers: string[];
+}
+
 interface ApiResponse {
   status: 'success' | 'error';
   httpStatus?: number;
@@ -11,6 +19,7 @@ interface ApiResponse {
   rawResponse?: string;
   message?: string;
   error?: string;
+  parsed?: ParsedResponse;
 }
 
 export default function Home() {
@@ -22,6 +31,7 @@ export default function Home() {
   const [campaignId, setCampaignId] = useState('');
   const [addPhoneNumbers, setAddPhoneNumbers] = useState('');
   const [addSms, setAddSms] = useState<'ON' | 'OFF'>('ON');
+  const [customerOrderId, setCustomerOrderId] = useState('');
 
   // Remove Campaign state
   const [removePhoneNumbers, setRemovePhoneNumbers] = useState('');
@@ -39,6 +49,11 @@ export default function Home() {
       .filter(num => num.length > 0);
   };
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Basic validation: should start with + and contain digits
+    return /^\+[1-9]\d{1,14}$/.test(phone);
+  };
+
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -54,14 +69,26 @@ export default function Home() {
       return;
     }
 
+    // Validate phone numbers
+    const invalidNumbers = phoneNumbers.filter(num => !validatePhoneNumber(num));
+    if (invalidNumbers.length > 0) {
+      setResponse({
+        status: 'error',
+        error: `Invalid phone number format: ${invalidNumbers.join(', ')}. Phone numbers must start with + and be in E.164 format.`,
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/bandwidth/add-campaign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          campaignId,
+          campaignId: campaignId.trim(),
           phoneNumbers,
           sms: addSms,
+          customerOrderId: customerOrderId.trim() || undefined,
         }),
       });
 
@@ -222,7 +249,7 @@ export default function Home() {
                     value={campaignId}
                     onChange={(e) => setCampaignId(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="e.g., CVZJ1EL"
+                    placeholder="e.g., C123456"
                     required
                   />
                 </div>
@@ -235,9 +262,24 @@ export default function Home() {
                     onChange={(e) => setAddPhoneNumbers(e.target.value)}
                     rows={4}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="+12549465498&#10;+13612714600"
+                    placeholder="+12345678910"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Customer Order ID (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={customerOrderId}
+                    onChange={(e) => setCustomerOrderId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="Leave empty for auto-generated ID"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    If not provided, an auto-generated ID will be used
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -365,7 +407,7 @@ export default function Home() {
             }`}
           >
             <h3
-              className={`font-semibold mb-2 ${
+              className={`font-semibold mb-3 ${
                 response.status === 'success'
                   ? 'text-green-800 dark:text-green-300'
                   : 'text-red-800 dark:text-red-300'
@@ -373,6 +415,55 @@ export default function Home() {
             >
               {response.status === 'success' ? '✓ Success' : '✗ Error'}
             </h3>
+            
+            {/* Parsed Response Details */}
+            {response.parsed && (
+              <div className="mb-4 space-y-2">
+                {response.parsed.orderId && (
+                  <div className="text-sm">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Order ID:</span>{' '}
+                    <span className="text-gray-900 dark:text-gray-100">{response.parsed.orderId}</span>
+                  </div>
+                )}
+                {response.parsed.processingStatus && (
+                  <div className="text-sm">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>{' '}
+                    <span className="text-gray-900 dark:text-gray-100">{response.parsed.processingStatus}</span>
+                  </div>
+                )}
+                {response.parsed.phoneNumbers.length > 0 && (
+                  <div className="text-sm">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Phone Numbers:</span>
+                    <ul className="list-disc list-inside mt-1 text-gray-900 dark:text-gray-100">
+                      {response.parsed.phoneNumbers.map((num, idx) => (
+                        <li key={idx}>{num}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {response.parsed.errors.length > 0 && (
+                  <div className="text-sm mt-2">
+                    <span className="font-medium text-red-700 dark:text-red-400">Errors:</span>
+                    <ul className="list-disc list-inside mt-1 text-red-600 dark:text-red-500">
+                      {response.parsed.errors.map((error, idx) => (
+                        <li key={idx}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {response.parsed.warnings.length > 0 && (
+                  <div className="text-sm mt-2">
+                    <span className="font-medium text-yellow-700 dark:text-yellow-400">Warnings:</span>
+                    <ul className="list-disc list-inside mt-1 text-yellow-600 dark:text-yellow-500">
+                      {response.parsed.warnings.map((warning, idx) => (
+                        <li key={idx}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             {response.message && (
               <p
                 className={`text-sm mb-2 ${
@@ -397,7 +488,7 @@ export default function Home() {
             {response.rawResponse && (
               <details className="mt-2">
                 <summary className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                  Raw Response
+                  Raw XML Response
                 </summary>
                 <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-auto max-h-64">
                   {response.rawResponse}
