@@ -2,38 +2,48 @@
  * Bandwidth API Client
  * 
  * This module provides functions to interact with the Bandwidth API.
+ * Uses the same credentials as bwTnOptions (username/password basic auth).
  * Make sure to set the following environment variables:
- * - BANDWIDTH_USER_ID
- * - BANDWIDTH_API_TOKEN
- * - BANDWIDTH_API_SECRET
+ * - BANDWIDTH_USERNAME
+ * - BANDWIDTH_PASSWORD
  * - BANDWIDTH_ACCOUNT_ID
  */
 
 const BANDWIDTH_API_BASE = 'https://api.bandwidth.com';
 
 interface BandwidthConfig {
-  userId: string;
-  apiToken: string;
-  apiSecret: string;
+  username: string;
+  password: string;
   accountId: string;
 }
 
 function getBandwidthConfig(): BandwidthConfig {
-  const userId = process.env.BANDWIDTH_USER_ID;
-  const apiToken = process.env.BANDWIDTH_API_TOKEN;
-  const apiSecret = process.env.BANDWIDTH_API_SECRET;
+  const username = process.env.BANDWIDTH_USERNAME;
+  const password = process.env.BANDWIDTH_PASSWORD;
   const accountId = process.env.BANDWIDTH_ACCOUNT_ID;
 
-  if (!userId || !apiToken || !apiSecret || !accountId) {
-    throw new Error('Missing required Bandwidth API credentials. Please set BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and BANDWIDTH_ACCOUNT_ID environment variables.');
+  const missing: string[] = [];
+  if (!username) missing.push('BANDWIDTH_USERNAME');
+  if (!password) missing.push('BANDWIDTH_PASSWORD');
+  if (!accountId) missing.push('BANDWIDTH_ACCOUNT_ID');
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing Bandwidth credentials. Please set the following environment variables in Vercel: ${missing.join(', ')}`
+    );
   }
 
-  return { userId, apiToken, apiSecret, accountId };
+  // TypeScript doesn't know these are defined after the check, so we assert they're strings
+  return { 
+    username: username!, 
+    password: password!, 
+    accountId: accountId! 
+  };
 }
 
 function getAuthHeader(): string {
-  const { apiToken, apiSecret } = getBandwidthConfig();
-  const credentials = Buffer.from(`${apiToken}:${apiSecret}`).toString('base64');
+  const { username, password } = getBandwidthConfig();
+  const credentials = Buffer.from(`${username}:${password}`).toString('base64');
   return `Basic ${credentials}`;
 }
 
@@ -42,7 +52,8 @@ export async function checkApiStatus() {
   const authHeader = getAuthHeader();
 
   try {
-    const response = await fetch(`${BANDWIDTH_API_BASE}/v1/users/${accountId}/account`, {
+    // Try the v2 API endpoint which uses accountId directly
+    const response = await fetch(`${BANDWIDTH_API_BASE}/api/v2/accounts/${accountId}`, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
@@ -54,10 +65,19 @@ export async function checkApiStatus() {
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    return {
-      success: true,
-      data: await response.json(),
-    };
+    const data = await response.text();
+    // Bandwidth API v2 returns XML, try to parse as JSON first, fallback to text
+    try {
+      return {
+        success: true,
+        data: JSON.parse(data),
+      };
+    } catch {
+      return {
+        success: true,
+        data: { raw: data },
+      };
+    }
   } catch (error) {
     return {
       success: false,
@@ -71,7 +91,8 @@ export async function getPhoneNumbers() {
   const authHeader = getAuthHeader();
 
   try {
-    const response = await fetch(`${BANDWIDTH_API_BASE}/v1/users/${accountId}/phoneNumbers`, {
+    // Use v2 API endpoint
+    const response = await fetch(`${BANDWIDTH_API_BASE}/api/v2/accounts/${accountId}/phoneNumbers`, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
@@ -83,10 +104,19 @@ export async function getPhoneNumbers() {
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    return {
-      success: true,
-      data: await response.json(),
-    };
+    const data = await response.text();
+    // Bandwidth API v2 returns XML, try to parse as JSON first, fallback to text
+    try {
+      return {
+        success: true,
+        data: JSON.parse(data),
+      };
+    } catch {
+      return {
+        success: true,
+        data: { raw: data },
+      };
+    }
   } catch (error) {
     return {
       success: false,
@@ -105,7 +135,8 @@ export async function sendMessage(to: string, from: string, text: string) {
   }
 
   try {
-    const response = await fetch(`${BANDWIDTH_API_BASE}/v1/users/${accountId}/messages`, {
+    // Use v2 API endpoint
+    const response = await fetch(`${BANDWIDTH_API_BASE}/api/v2/accounts/${accountId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
@@ -124,10 +155,19 @@ export async function sendMessage(to: string, from: string, text: string) {
       throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    return {
-      success: true,
-      data: await response.json(),
-    };
+    const data = await response.text();
+    // Bandwidth API v2 returns XML, try to parse as JSON first, fallback to text
+    try {
+      return {
+        success: true,
+        data: JSON.parse(data),
+      };
+    } catch {
+      return {
+        success: true,
+        data: { raw: data },
+      };
+    }
   } catch (error) {
     return {
       success: false,

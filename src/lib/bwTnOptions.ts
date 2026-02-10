@@ -11,9 +11,14 @@ function getBwCreds(): BwCreds {
   const password = process.env.BANDWIDTH_PASSWORD;
   const accountId = process.env.BANDWIDTH_ACCOUNT_ID;
 
-  if (!username || !password || !accountId) {
+  const missing: string[] = [];
+  if (!username) missing.push('BANDWIDTH_USERNAME');
+  if (!password) missing.push('BANDWIDTH_PASSWORD');
+  if (!accountId) missing.push('BANDWIDTH_ACCOUNT_ID');
+
+  if (missing.length > 0) {
     throw new Error(
-      'Missing Bandwidth credentials. Please set BANDWIDTH_USERNAME, BANDWIDTH_PASSWORD, and BANDWIDTH_ACCOUNT_ID.'
+      `Missing Bandwidth credentials. Please set the following environment variables in Vercel: ${missing.join(', ')}`
     );
   }
 
