@@ -4,12 +4,12 @@ import json
 import xml.etree.ElementTree as ET
 
 # Replace these with your actual Bandwidth API credentials
-username = 'jeremyApi'
-password = 'Arglebargle7!'
+username = ''
+password = ''
 
 # API endpoint for TnOptionOrder
 # Try using the same base pattern as moveTns: /api/v2/accounts/{accountId}/tnOptions
-url = "https://api.bandwidth.com/api/v2/accounts/5005456/tnOptions"
+url = "https://api.bandwidth.com/api/v2/accounts/{accountId}/tnOptions"
 
 # JSON payload matching Bandwidth API structure
 # Set sms to "OFF" if disabling SMS, "ON" if enabling

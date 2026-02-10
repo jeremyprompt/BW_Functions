@@ -4,11 +4,11 @@ import json
 import xml.etree.ElementTree as ET
 
 # Replace these with your actual Bandwidth API credentials
-username = 'jeremyApi'
-password = 'Arglebargle7!'
+username = ''
+password = ''
 
 # API endpoint for the specific phone number
-url = "https://api.bandwidth.com/api/v2/accounts/5005456/moveTns"
+url = "https://api.bandwidth.com/api/v2/accounts/{accountId}/moveTns"
 
 payload = {
 "subAccountId": 33376,

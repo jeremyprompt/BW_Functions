@@ -34,7 +34,6 @@ npm run dev
 ## Deployment to Vercel
 
 ### Step 1: Initialize Git Repository (if not already done)
-
 ```bash
 git init
 git add .
