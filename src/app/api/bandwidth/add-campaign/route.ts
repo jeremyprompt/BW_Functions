@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       campaignId,
       phoneNumbers,
       sms,
-      customerOrderId,
+      ...(customerOrderId && { customerOrderId }),
     });
 
     // Parse XML response if available

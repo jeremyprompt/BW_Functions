@@ -47,7 +47,7 @@ export async function addCampaignToTns(params: {
   const url = `${BANDWIDTH_API_BASE}/accounts/${creds.accountId}/tnOptions`;
 
   const payload = {
-    customerOrderId: customerOrderId || `TnOptionOrder_AddCampaign_${Date.now()}`,
+    customerOrderId: customerOrderId || `TnOptionOrder-AddCampaign-${Date.now()}`,
     tnOptionGroups: [
       {
         sms,
@@ -89,7 +89,7 @@ export async function removeCampaignFromTns(params: {
   const url = `${BANDWIDTH_API_BASE}/accounts/${creds.accountId}/tnOptions`;
 
   const payload = {
-    customerOrderId: `TnOptionOrder_RemoveCampaign_${Date.now()}`,
+    customerOrderId: `TnOptionOrder-RemoveCampaign-${Date.now()}`,
     tnOptionGroups: [
       {
         sms,
