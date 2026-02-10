@@ -117,6 +117,17 @@ export default function Home() {
       return;
     }
 
+    // Validate phone numbers
+    const invalidNumbers = phoneNumbers.filter(num => !validatePhoneNumber(num));
+    if (invalidNumbers.length > 0) {
+      setResponse({
+        status: 'error',
+        error: `Invalid phone number format: ${invalidNumbers.join(', ')}. Phone numbers must start with + and be in E.164 format.`,
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/bandwidth/remove-campaign', {
         method: 'POST',
@@ -299,7 +310,7 @@ export default function Home() {
                     onChange={(e) => setRemovePhoneNumbers(e.target.value)}
                     rows={4}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="+12549465498&#10;+13612714600"
+                    placeholder="+12345678910"
                     required
                   />
                 </div>

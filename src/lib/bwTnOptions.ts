@@ -89,7 +89,7 @@ export async function removeCampaignFromTns(params: {
   const url = `${BANDWIDTH_API_BASE}/accounts/${creds.accountId}/tnOptions`;
 
   const payload = {
-    customerOrderId: 'TnOptionOrder_RemoveCampaign',
+    customerOrderId: `TnOptionOrder_RemoveCampaign_${Date.now()}`,
     tnOptionGroups: [
       {
         sms,
