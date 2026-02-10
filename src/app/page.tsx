@@ -31,7 +31,6 @@ export default function Home() {
   const [campaignId, setCampaignId] = useState('');
   const [addPhoneNumbers, setAddPhoneNumbers] = useState('');
   const [addSms, setAddSms] = useState<'ON' | 'OFF'>('ON');
-  const [customerOrderId, setCustomerOrderId] = useState('');
 
   // Remove Campaign state
   const [removePhoneNumbers, setRemovePhoneNumbers] = useState('');
@@ -88,7 +87,6 @@ export default function Home() {
           campaignId: campaignId.trim(),
           phoneNumbers,
           sms: addSms,
-          customerOrderId: customerOrderId.trim() || undefined,
         }),
       });
 
@@ -265,21 +263,6 @@ export default function Home() {
                     placeholder="+12345678910"
                     required
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Customer Order ID (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={customerOrderId}
-                    onChange={(e) => setCustomerOrderId(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="Leave empty for auto-generated ID"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    If not provided, an auto-generated ID will be used
-                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
